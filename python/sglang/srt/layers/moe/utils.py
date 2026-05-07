@@ -487,3 +487,32 @@ def get_moe_weight_sizes(inter_dim, is_concat, is_packed, is_aiter_moe):
             w13_up_dim *= 2
 
     return (w13_up_dim, w2_down_dim, False if not is_aiter_moe else is_padded)
+
+
+# ---------------------------------------------------------------------------
+# KT EP Wrapper disable flag (for speculative decoding draft models)
+# ---------------------------------------------------------------------------
+
+DISABLE_KT_EP_WRAPPER: bool = False
+
+
+def is_kt_ep_wrapper_disabled() -> bool:
+    """Check if KT EP wrapper is disabled (for draft models in speculative decoding)."""
+    global DISABLE_KT_EP_WRAPPER
+    return DISABLE_KT_EP_WRAPPER
+
+
+@contextmanager
+def speculative_kt_ep_disabled_context():
+    """
+    Context manager to disable KT EP wrapper for draft model operations.
+    Ensures draft models use pure GPU MoE instead of CPU-GPU hybrid computation
+    via kt_ep_wrapper.
+    """
+    global DISABLE_KT_EP_WRAPPER
+    original_value = DISABLE_KT_EP_WRAPPER
+    try:
+        DISABLE_KT_EP_WRAPPER = True
+        yield
+    finally:
+        DISABLE_KT_EP_WRAPPER = original_value
