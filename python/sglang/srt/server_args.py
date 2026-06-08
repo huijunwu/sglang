@@ -670,6 +670,12 @@ class ServerArgs:
     kt_threadpool_count: Optional[int] = None
     kt_num_gpu_experts: Optional[int] = None
     kt_max_deferred_experts_per_token: Optional[int] = None
+    kt_numa_nodes: Optional[List[int]] = None
+    kt_gpu_experts_ratio: Optional[float] = None
+    kt_gpu_prefill_token_threshold: Optional[int] = None
+    record_kt_gpu_expert_distribution: bool = False
+    kt_enable_dynamic_expert_update: bool = False
+    kt_expert_placement_strategy: str = "uniform"
 
     # Diffusion LLM
     dllm_algorithm: Optional[str] = None
@@ -6117,6 +6123,45 @@ class ServerArgs:
             type=int,
             default=ServerArgs.kt_max_deferred_experts_per_token,
             help="[ktransformers parameter] Maximum number of experts deferred to CPU per token. All MoE layers except the final one use this value; the final layer always uses 0.",
+        )
+        parser.add_argument(
+            "--kt-numa-nodes",
+            type=int,
+            nargs="+",
+            default=ServerArgs.kt_numa_nodes,
+            help="[ktransformers parameter] Explicit NUMA node ids for each KT threadpool. "
+                 "Length must equal --kt-threadpool-count.",
+        )
+        parser.add_argument(
+            "--kt-gpu-experts-ratio",
+            type=float,
+            default=ServerArgs.kt_gpu_experts_ratio,
+            help="[ktransformers parameter] Ratio of total experts to place on GPU (0.0-1.0). "
+                 "If set, overrides --kt-num-gpu-experts.",
+        )
+        parser.add_argument(
+            "--kt-gpu-prefill-token-threshold",
+            type=int,
+            default=ServerArgs.kt_gpu_prefill_token_threshold,
+            help="[ktransformers parameter] Token threshold for loading full layer to GPU during prefill.",
+        )
+        parser.add_argument(
+            "--record-kt-gpu-expert-distribution",
+            action="store_true",
+            help="[ktransformers parameter] Record GPU expert distribution for each forward pass.",
+        )
+        parser.add_argument(
+            "--kt-enable-dynamic-expert-update",
+            action="store_true",
+            default=ServerArgs.kt_enable_dynamic_expert_update,
+            help="[ktransformers parameter] Enable dynamic GPU expert updates based on runtime statistics.",
+        )
+        parser.add_argument(
+            "--kt-expert-placement-strategy",
+            type=str,
+            default=ServerArgs.kt_expert_placement_strategy,
+            choices=["frequency", "front-loading", "uniform", "random"],
+            help="[ktransformers parameter] GPU expert placement strategy.",
         )
 
         # Diffusion LLM
